@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Main-Class: com.hw2.Server.ServerApplication
+Class-Path: spring-context-6.0.13.jar mongodb-driver-core-4.9.1.jar tomc
+ at-embed-websocket-10.1.15.jar bson-record-codec-4.9.1.jar spring-core-
+ 6.0.13.jar spring-webmvc-6.0.13.jar log4j-to-slf4j-2.20.0.jar mongodb-d
+ river-sync-4.9.1.jar spring-data-mongodb-4.1.5.jar snakeyaml-1.33.jar t
+ omcat-embed-core-10.1.15.jar spring-expression-6.0.13.jar spring-boot-s
+ tarter-json-3.1.5.jar log4j-api-2.20.0.jar micrometer-commons-1.11.5.ja
+ r bson-4.9.1.jar micrometer-observation-1.11.5.jar spring-jcl-6.0.13.ja
+ r spring-boot-starter-web-3.1.5.jar jul-to-slf4j-2.0.9.jar spring-aop-6
+ .0.13.jar jackson-datatype-jdk8-2.15.3.jar tomcat-embed-el-10.1.15.jar 
+ spring-data-commons-3.1.5.jar spring-boot-starter-3.1.5.jar spring-boot
+ -starter-logging-3.1.5.jar jackson-module-parameter-names-2.15.3.jar sp
+ ring-boot-3.1.5.jar logback-classic-1.4.11.jar spring-beans-6.0.13.jar 
+ slf4j-api-2.0.9.jar jackson-datatype-jsr310-2.15.3.jar jakarta.annotati
+ on-api-2.1.1.jar spring-tx-6.0.13.jar logback-core-1.4.11.jar jackson-d
+ atabind-2.15.3.jar jackson-core-2.15.3.jar spring-boot-autoconfigure-3.
+ 1.5.jar spring-boot-starter-tomcat-3.1.5.jar jackson-annotations-2.15.3
+ .jar spring-web-6.0.13.jar spring-boot-starter-data-mongodb-3.1.5.jar
+
