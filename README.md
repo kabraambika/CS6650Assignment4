@@ -58,4 +58,14 @@ Once all services have successfully launched, you will have a basic Kafka enviro
 
 
 # How to install Kafka in AWS
-- Still in progress
+- Start EC2 linux 2(amzn2-ami-kernel-5.10-hvm-2.0.20231116.0-x86_64-gp2 ami-0c0d141edc4f470cc) with t2.large and ssh
+- install java
+  ```ssh sudo yum install java-17-amazon-corretto-devel ```
+- copy kafka downloaded (upzip folder) in ec2
+- give all permission by ```ssh sudo chmod -R a+rwx kafka_2.13-3.6.1/ ```
+- navigate to kafka ```ssh cd kafka_2.13-3.6.1/ ```
+- run zookeeper ```ssh bin/zookeeper-server-start.sh config/zookeeper.properties ```
+- open anther terminal ```ssh  bin/kafka-server-start.sh config/server.properties ```
+- upload jar of springboot kafka
+- start jar by ```ssh java -jar <jar_name>.jar ```
+  
