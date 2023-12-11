@@ -23,6 +23,12 @@ public class Client2 {
         String boundary = UUID.randomUUID().toString();
         byte[] imageBytes = Files.readAllBytes(new File("./src/main/resources/nmtb.png").toPath());
         ConcurrentLinkedQueue<Response> responses = new ConcurrentLinkedQueue<>();
+        List<String> albumbIds = new ArrayList<>();
+
+        // FOR LOCAL TESTING URLs:
+        // String albumPostURL = "http://localhost:8080/";
+        // String reviewPostServerURL = "http://localhost:8080/reviews/like/";
+        // String reviewGetServerURL = "http://localhost:8080/review/";
 
         HttpClient httpClient = HttpClient.newHttpClient();
         HttpRequest postRequest = HttpRequest.newBuilder()
@@ -43,6 +49,7 @@ public class Client2 {
 
         List<Thread> threads = new ArrayList<>();
 
+        // Initialize threads for POST requests
         for (int i = 0; i < 10; i++) {
             Thread thread = new Thread(() -> {
                 for (int j = 0; j < 100; j++) {
@@ -64,11 +71,6 @@ public class Client2 {
                 }
             });
             threads.add(thread);
-        }
-
-        startTime = System.currentTimeMillis();
-
-        for (Thread thread : threads) {
             thread.start();
         }
 
@@ -76,7 +78,10 @@ public class Client2 {
             thread.join();
         }
 
+        startTime = System.currentTimeMillis();
+
         threads = new ArrayList<>();
+        List<Thread> getReviewThreads = new ArrayList<>();
 
         for (int group = 0; group < numThreadGroups; group++) {
             for (int i = 0; i < threadGroupSize; i++) {
@@ -93,17 +98,18 @@ public class Client2 {
                                 long postEndTime = System.currentTimeMillis();
 
                                 JsonObject responseBody = JsonParser.parseString(postResponse.body()).getAsJsonObject();
-                                String message = responseBody.get("message").getAsString();
-                                String id = message.substring(message.indexOf("{value=") + 7, message.length() - 1);
+                                String albumID = responseBody.get("albumID").getAsString();
+                                String imageSize = responseBody.get("imageSize").getAsString();
 
-                                // HTTP POST request to /reviews/{likeordislike}/{id}
+                                albumbIds.add(albumID);
+
                                 HttpRequest likeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + id))
+                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
                                 HttpRequest disLikeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + id))
+                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
@@ -117,10 +123,12 @@ public class Client2 {
                                 long getStartTimeDislike1 = System.currentTimeMillis();
                                 HttpResponse<String> reviewPostResponse = httpClient.send(disLikeRequest, HttpResponse.BodyHandlers.ofString());
                                 long getEndTimeDislike1 = System.currentTimeMillis();
-                                if (reviewPostResponse.statusCode() == 201
+                                if (
+                                        postResponse.statusCode() == 201
                                         && reviewPostResponse1.statusCode() == 201
                                         && reviewPostResponse2.statusCode() == 201
-                                        && postResponse.statusCode() == 201) {
+                                        && reviewPostResponse.statusCode() == 201
+                                ) {
                                     success = true;
                                 }
                                 responses.add(new Response(postStartTime, "POST", postEndTime - postStartTime, postResponse.statusCode()));
@@ -139,10 +147,41 @@ public class Client2 {
                 threads.add(thread);
                 thread.start();
             }
+
+            // Threads for GET requests
+
+            for (int j = 0; j < 3; j++) {
+                String finalIPAddr1 = IPAddr;
+                Thread getThread = new Thread(() -> {
+                    try {
+                        String albumID = randomIDGenerator(albumbIds);
+                        HttpRequest getRequest = HttpRequest.newBuilder()
+                                .uri(java.net.URI.create(finalIPAddr1 + "/review/" + albumID))
+                                .header("Content-Type", "application/json")
+                                .GET()
+                                .build();
+                        long getStartTime = System.currentTimeMillis();
+                        HttpResponse<String> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+                        long getEndTime = System.currentTimeMillis();
+                        responses.add(new Response(getStartTime, "GET", getEndTime - getStartTime, getResponse.statusCode()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+                getThread.start();
+                getReviewThreads.add(getThread);
+            }
+
             Thread.sleep(delay * 1000);
         }
 
+        // Wait for all POST requests to finish
         for (Thread thread : threads) {
+            thread.join();
+        }
+
+        // Wait for all GET requests to finish
+        for (Thread thread : getReviewThreads) {
             thread.join();
         }
 
@@ -150,6 +189,11 @@ public class Client2 {
 
         long[] postLatencies = responses.stream()
                 .filter(r -> r.getRequestType().equals("POST"))
+                .mapToLong(Response::getLatency)
+                .sorted().toArray();
+
+        long[] getLatencies = responses.stream()
+                .filter(r -> r.getRequestType().equals("GET"))
                 .mapToLong(Response::getLatency)
                 .sorted().toArray();
 
@@ -167,6 +211,11 @@ public class Client2 {
         double meanPostLatency = postLatencies.length > 0 ? (double) Arrays.stream(postLatencies).sum() / postLatencies.length : 0;
         double medianPostLatency = postLatencies.length > 0 ? postLatencies[(int) (postLatencies.length / 2)] : 0;
         double p99PostLatency = postLatencies.length > 0 ? postLatencies[(int) (postLatencies.length * 0.99)] : 0;
+        double meanGetLatency = getLatencies.length > 0 ? (double) Arrays.stream(getLatencies).sum() / getLatencies.length : 0;
+        double medianGetLatency = getLatencies.length > 0 ? getLatencies[(int) (getLatencies.length / 2)] : 0;
+        double p99GetLatency = getLatencies.length > 0 ? getLatencies[(int) (getLatencies.length * 0.99)] : 0;
+        double minResponseTimeGET = responses.stream().filter(r -> r.getRequestType().equals("GET")).mapToLong(Response::getLatency).min().orElse(0);
+        double maxResponseTimeGET = responses.stream().filter(r -> r.getRequestType().equals("GET")).mapToLong(Response::getLatency).max().orElse(0);
 
 //        double mean
 
@@ -187,6 +236,12 @@ public class Client2 {
         System.out.println("99th percentile POST latency: " + p99PostLatency + " ms");
         System.out.println("Min response time POST: " + minResponseTimePOST + " ms");
         System.out.println("Max response time POST: " + maxResponseTimePOST + " ms\n\n");
+        System.out.println("GET request statistics:\n");
+        System.out.println("Mean GET latency: " + meanGetLatency + " ms");
+        System.out.println("Median GET latency: " + medianGetLatency + " ms");
+        System.out.println("99th percentile GET latency: " + p99GetLatency + " ms");
+        System.out.println("Min response time GET: " + minResponseTimeGET + " ms");
+        System.out.println("Max response time GET: " + maxResponseTimeGET + " ms\n\n");
 
         FileWriter outputFile = new FileWriter("./src/main/resources/Client2Output.csv");
         CSVWriter writer = new CSVWriter(outputFile);
@@ -198,6 +253,11 @@ public class Client2 {
 
         writer.close();
         outputFile.close();
+    }
+
+    public static String randomIDGenerator(List<String> albumIds) {
+        int i = (int) (Math.random() * albumIds.size());
+        return albumIds.get(i);
     }
 
     public static void main(String[] args) {

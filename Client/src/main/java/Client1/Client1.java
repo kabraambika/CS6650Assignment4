@@ -24,7 +24,13 @@ public class Client1 {
         IPAddr = IPAddr.trim();
         String boundary = UUID.randomUUID().toString();
         byte[] imageBytes = Files.readAllBytes(new File("./src/main/resources/nmtb.png").toPath());
-//
+        List<String> albumbIds = new ArrayList<>();
+
+        // FOR LOCAL TESTING URLs:
+        // String albumPostURL = "http://localhost:8080/";
+        // String reviewPostServerURL = "http://localhost:8080/reviews/like/";
+        // String reviewGetServerURL = "http://localhost:8080/review/";
+
         HttpClient httpClient = HttpClient.newHttpClient();
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(java.net.URI.create(IPAddr + "albums/"))
@@ -33,7 +39,7 @@ public class Client1 {
                         "Content-Disposition: form-data; name=\"profile\"\r\n" +
                         "Content-Type: application/json\r\n" +
                         "\r\n" +
-                        "{\"artist\":\"hi\",\"title\":\"hello\",\"year\":1999,\"likes\":0}\r\n" +
+                        "{\"artist\":\"Taylor\",\"title\":\"hello\",\"year\":1989,\"likes\":0}\r\n" +
                         "--" + boundary + "\r\n" +
                         "Content-Disposition: form-data; name=\"image\"; filename=\"image.png\"\r\n" +
                         "Content-Type: application/octet-stream\r\n" +
@@ -44,8 +50,7 @@ public class Client1 {
 
         List<Thread> threads = new ArrayList<>();
 
-        //RabbitMQ
-
+        // Initialize threads for POST requests
         for (int i = 0; i < 10; i++) {
             Thread thread = new Thread(() -> {
                 for (int j = 0; j < 10; j++) {
@@ -64,9 +69,6 @@ public class Client1 {
                 }
             });
             threads.add(thread);
-        }
-
-        for (Thread thread : threads) {
             thread.start();
         }
 
@@ -77,6 +79,7 @@ public class Client1 {
         startTime = System.currentTimeMillis();
 
         threads = new ArrayList<>();
+        List<Thread> getReviewThreads = new ArrayList<>();
 
         for (int group = 0; group < numThreadGroups; group++) {
             for (int i = 0; i < threadGroupSize; i++) {
@@ -89,17 +92,20 @@ public class Client1 {
                             try {
                                 HttpResponse<String> postResponse = httpClient.send(postRequest, HttpResponse.BodyHandlers.ofString());
                                 JsonObject responseBody = JsonParser.parseString(postResponse.body()).getAsJsonObject();
-                                String message = responseBody.get("message").getAsString();
-                                String id = message.substring(message.indexOf("{value=") + 7, message.length() - 1);
+                                String albumID = responseBody.get("albumID").getAsString();
+                                String imageSize = responseBody.get("imageSize").getAsString();
 
-                                // HTTP POST request to /reviews/{likeordislike}/{id}
+                                albumbIds.add(albumID);
+
+//                                 HTTP POST request to /reviews/{like[or]dislike}/{id}
+
                                 HttpRequest likeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + id))
+                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
                                 HttpRequest disLikeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + id))
+                                        .uri(java.net.URI.create(finalIPAddr + "reviews/dislike/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
@@ -107,10 +113,12 @@ public class Client1 {
                                 HttpResponse<String> reviewPostResponse1 = httpClient.send(likeRequest, HttpResponse.BodyHandlers.ofString());
                                 HttpResponse<String> reviewPostResponse2 = httpClient.send(disLikeRequest, HttpResponse.BodyHandlers.ofString());
 
-                                if (postResponse.statusCode() == 201
+                                if (
+                                        postResponse.statusCode() == 201
                                         && reviewPostResponse.statusCode() == 201
                                         && reviewPostResponse1.statusCode() == 201
-                                        && reviewPostResponse2.statusCode() == 201) {
+                                        && reviewPostResponse2.statusCode() == 201
+                                ) {
                                     success = true;
                                 }
                             } catch (IOException | InterruptedException e) {
@@ -125,10 +133,38 @@ public class Client1 {
                 threads.add(thread);
                 thread.start();
             }
+
+            // Threads for GET requests
+
+            for (int j = 0; j < 3; j++) {
+                String finalIPAddr1 = IPAddr;
+                Thread getThread = new Thread(() -> {
+                    try {
+                        String albumID = randomIDGenerator(albumbIds);
+                        HttpRequest getRequest = HttpRequest.newBuilder()
+                                .uri(java.net.URI.create(finalIPAddr1 + "/review/" + albumID))
+                                .header("Content-Type", "application/json")
+                                .GET()
+                                .build();
+                        HttpResponse<String> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+                getThread.start();
+                getReviewThreads.add(getThread);
+            }
+
             Thread.sleep(delay * 1000);
         }
 
+        // Wait for all POST requests to finish
         for (Thread thread : threads) {
+            thread.join();
+        }
+
+        // Wait for all GET requests to finish
+        for (Thread thread : getReviewThreads) {
             thread.join();
         }
 
@@ -140,6 +176,11 @@ public class Client1 {
         System.out.println("Total requests: " + totalRequests);
         System.out.println("Wall time: " + wallTime + " seconds");
         System.out.println("Throughput: " + (double) totalRequests / wallTime + " requests/second");
+    }
+
+    public static String randomIDGenerator(List<String> albumIds) {
+        int i = (int) (Math.random() * albumIds.size());
+        return albumIds.get(i);
     }
 
     public static void main(String[] args) {
