@@ -16,9 +16,9 @@ import java.io.IOException;
 @WebServlet(name = "ReviewsGetServlet", value = "/ReviewsGetServlet")
 public class ReviewsGetServlet extends HttpServlet {
     Gson gson = new Gson();
-    String EC2_URL = "ec2-18-246-149-220.us-west-2.compute.amazonaws.com";
-    private String mongoConnectionString = "MONGODB_URI";
-    private String mongoDatabase = "DB_NAME";
+    String EC2_URL = "ec2-54-245-159-188.us-west-2.compute.amazonaws.com";
+    private String mongoConnectionString = "mongodb://ec2-54-68-149-246.us-west-2.compute.amazonaws.com:27017";
+    private String mongoDatabase = "AlbumStore";
     private String collectionName = "reviews";
     JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), EC2_URL, 6379);
     MongoClient mongoClient = MongoClients.create(mongoConnectionString);
@@ -36,22 +36,8 @@ public class ReviewsGetServlet extends HttpServlet {
             String id = urlParts[1];
             String review = jedis.get(id);
             if (review == null) {
-                response.setStatus(400);
-                response.getWriter().println("Review not found");
-
-                // Get from MongoDB if it doesn't exist in Redis
-
-//                collection.find(new Document("id", id)).forEach(document -> {
-//                    Response res = new Response(document.get("albumId").toString(), document.get("likes").toString());
-//                    String json = gson.toJson(res);
-//                    jedis.set(id, json);
-//                    response.setStatus(200);
-//                    try {
-//                        response.getWriter().println(json);
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                });
+                response.setStatus(200);
+                response.getWriter().println(gson.toJson(new Response(id, "0")));
             } else {
                 response.setStatus(200);
                 response.getWriter().println(review);

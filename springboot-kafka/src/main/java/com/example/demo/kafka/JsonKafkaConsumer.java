@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 /**
  * @author ambikakabra
@@ -15,6 +18,8 @@ import org.springframework.stereotype.Service;
 public class JsonKafkaConsumer {
   private static final Logger LOGGER = LoggerFactory.getLogger(JsonKafkaConsumer.class);
   private AlbumService albumService;
+  private String EC2_PUBLIC_IP = "EC2_PUBLIC_IP";
+  JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), EC2_PUBLIC_IP, 6379);
 
   public JsonKafkaConsumer(AlbumService albumService) {
     this.albumService = albumService;
@@ -28,6 +33,14 @@ public class JsonKafkaConsumer {
     newReview.setAlbumID(review.getAlbumID());
     newReview.setLikes(review.getLikes());
     AlbumReview metaData = albumService.createReview(newReview);
+
+    try (Jedis jedis = jedisPool.getResource()) {
+      jedis.set(metaData.getAlbumID(), String.valueOf(metaData.getLikes()));
+      int ttl = 30;
+      jedis.expire(metaData.getId(), ttl);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
   }
 }
