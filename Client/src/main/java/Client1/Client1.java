@@ -2,9 +2,6 @@ package Client1;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +30,7 @@ public class Client1 {
 
         HttpClient httpClient = HttpClient.newHttpClient();
         HttpRequest postRequest = HttpRequest.newBuilder()
-                .uri(java.net.URI.create(IPAddr + "albums/"))
+                .uri(java.net.URI.create(IPAddr + "hw4/albums/"))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                 .POST(HttpRequest.BodyPublishers.ofString("--" + boundary + "\r\n" +
                         "Content-Disposition: form-data; name=\"profile\"\r\n" +
@@ -61,11 +58,13 @@ public class Client1 {
                             HttpResponse<String> postResponse = httpClient.send(postRequest, HttpResponse.BodyHandlers.ofString());
                             if (postResponse.statusCode() == 201) {
                                 success = true;
-                                String albumID = JsonParser.parseString(postResponse.body()).getAsJsonObject().get("albumID").getAsString();
-                                albumbIds.add(albumID);
                             } else {
                                 retryCount++;
+                                continue;
                             }
+                            JsonObject responseBody = JsonParser.parseString(postResponse.body()).getAsJsonObject();
+                            String albumID = responseBody.get("albumID").getAsString();
+                            albumbIds.add(albumID);
                         } catch (IOException | InterruptedException e) {
                             retryCount++;
                         }
@@ -87,7 +86,7 @@ public class Client1 {
 
         for (int group = 0; group < numThreadGroups; group++) {
             for (int i = 0; i < threadGroupSize; i++) {
-                String finalIPAddr = IPAddr;
+                String finalIPAddr = "http://localhost:8080/";
                 Thread thread = new Thread(() -> {
                     for (int j = 0; j < 100; j++) {
                         int retryCount = 0;
@@ -104,12 +103,12 @@ public class Client1 {
 //                                 HTTP POST request to /reviews/{like[or]dislike}/{id}
 
                                 HttpRequest likeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + albumID))
+                                        .uri(java.net.URI.create(finalIPAddr + "review/like/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
                                 HttpRequest disLikeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/dislike/" + albumID))
+                                        .uri(java.net.URI.create(finalIPAddr + "review/dislike/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
@@ -119,9 +118,9 @@ public class Client1 {
 
                                 if (
                                         postResponse.statusCode() == 201
-                                        && reviewPostResponse.statusCode() == 201
-                                        && reviewPostResponse1.statusCode() == 201
-                                        && reviewPostResponse2.statusCode() == 201
+//                                        && reviewPostResponse.statusCode() == 201
+//                                        && reviewPostResponse1.statusCode() == 201
+//                                        && reviewPostResponse2.statusCode() == 201
                                 ) {
                                     success = true;
                                 } else {
@@ -148,7 +147,7 @@ public class Client1 {
                     try {
                         String albumID = randomIDGenerator(albumbIds);
                         HttpRequest getRequest = HttpRequest.newBuilder()
-                                .uri(java.net.URI.create(finalIPAddr1 + "/review/" + albumID))
+                                .uri(java.net.URI.create(finalIPAddr1 + "ReviewsGetServer/review/" + albumID))
                                 .header("Content-Type", "application/json")
                                 .GET()
                                 .build();

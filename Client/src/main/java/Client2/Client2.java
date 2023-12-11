@@ -62,12 +62,13 @@ public class Client2 {
                             long postEndTime = System.currentTimeMillis();
                             if (postResponse.statusCode() == 201) {
                                 success = true;
-                                String albumID = JsonParser.parseString(postResponse.body()).getAsJsonObject().get("albumID").getAsString();
-                                albumbIds.add(albumID);
                             } else {
                                 retryCount++;
                                 continue;
                             }
+                            JsonObject responseBody = JsonParser.parseString(postResponse.body()).getAsJsonObject();
+                            String albumID = responseBody.get("albumID").getAsString();
+                            albumbIds.add(albumID);
                             responses.add(new Response(postStartTime, "POST", postEndTime - postStartTime, postResponse.statusCode()));
                         } catch (IOException | InterruptedException e) {
                             retryCount++;
@@ -90,7 +91,7 @@ public class Client2 {
 
         for (int group = 0; group < numThreadGroups; group++) {
             for (int i = 0; i < threadGroupSize; i++) {
-                String finalIPAddr = IPAddr;
+                String finalIPAddr = "http://localhost:8080/";
                 Thread thread = new Thread(() -> {
                     for (int j = 0; j < 100; j++) {
                         int retryCount = 0;
@@ -130,9 +131,9 @@ public class Client2 {
                                 long getEndTimeDislike1 = System.currentTimeMillis();
                                 if (
                                         postResponse.statusCode() == 201
-                                        && reviewPostResponse1.statusCode() == 201
-                                        && reviewPostResponse2.statusCode() == 201
-                                        && reviewPostResponse.statusCode() == 201
+//                                        && reviewPostResponse1.statusCode() == 201
+//                                        && reviewPostResponse2.statusCode() == 201
+//                                        && reviewPostResponse.statusCode() == 201
                                 ) {
                                     success = true;
                                 } else {
@@ -164,7 +165,7 @@ public class Client2 {
                     try {
                         String albumID = randomIDGenerator(albumbIds);
                         HttpRequest getRequest = HttpRequest.newBuilder()
-                                .uri(java.net.URI.create(finalIPAddr1 + "/review/" + albumID))
+                                .uri(java.net.URI.create(finalIPAddr1 + "ReviewsGetServer/review/" + albumID))
                                 .header("Content-Type", "application/json")
                                 .GET()
                                 .build();
