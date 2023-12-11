@@ -62,6 +62,11 @@ public class Client2 {
                             long postEndTime = System.currentTimeMillis();
                             if (postResponse.statusCode() == 201) {
                                 success = true;
+                                String albumID = JsonParser.parseString(postResponse.body()).getAsJsonObject().get("albumID").getAsString();
+                                albumbIds.add(albumID);
+                            } else {
+                                retryCount++;
+                                continue;
                             }
                             responses.add(new Response(postStartTime, "POST", postEndTime - postStartTime, postResponse.statusCode()));
                         } catch (IOException | InterruptedException e) {
@@ -130,6 +135,9 @@ public class Client2 {
                                         && reviewPostResponse.statusCode() == 201
                                 ) {
                                     success = true;
+                                } else {
+                                    retryCount++;
+                                    continue;
                                 }
                                 responses.add(new Response(postStartTime, "POST", postEndTime - postStartTime, postResponse.statusCode()));
                                 responses.add(new Response(getStartTimeLike1, "POST", getEndTimeLike1 - getStartTimeLike1, reviewPostResponse1.statusCode()));

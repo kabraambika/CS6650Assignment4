@@ -61,6 +61,10 @@ public class Client1 {
                             HttpResponse<String> postResponse = httpClient.send(postRequest, HttpResponse.BodyHandlers.ofString());
                             if (postResponse.statusCode() == 201) {
                                 success = true;
+                                String albumID = JsonParser.parseString(postResponse.body()).getAsJsonObject().get("albumID").getAsString();
+                                albumbIds.add(albumID);
+                            } else {
+                                retryCount++;
                             }
                         } catch (IOException | InterruptedException e) {
                             retryCount++;
@@ -120,6 +124,8 @@ public class Client1 {
                                         && reviewPostResponse2.statusCode() == 201
                                 ) {
                                     success = true;
+                                } else {
+                                    retryCount++;
                                 }
                             } catch (IOException | InterruptedException e) {
                                 retryCount++;
