@@ -26,13 +26,13 @@ public class Client2 {
         List<String> albumbIds = new ArrayList<>();
 
         // FOR LOCAL TESTING URLs:
-        // String albumPostURL = "http://localhost:8080/";
-        // String reviewPostServerURL = "http://localhost:8080/reviews/like/";
-        // String reviewGetServerURL = "http://localhost:8080/review/";
+        String albumPostURL = "http://ec2-54-201-111-61.us-west-2.compute.amazonaws.com:8080/";
+        String reviewPostServerURL = "http://ec2-54-189-163-130.us-west-2.compute.amazonaws.com:8080/";
+        String reviewGetServerURL = "http://ec2-52-88-16-226.us-west-2.compute.amazonaws.com:8080/ReviewsGetServer/";
 
         HttpClient httpClient = HttpClient.newHttpClient();
         HttpRequest postRequest = HttpRequest.newBuilder()
-                .uri(java.net.URI.create(IPAddr + "albums/"))
+                .uri(java.net.URI.create(albumPostURL + "hw4/albums/"))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                 .POST(HttpRequest.BodyPublishers.ofString("--" + boundary + "\r\n" +
                         "Content-Disposition: form-data; name=\"profile\"\r\n" +
@@ -91,7 +91,7 @@ public class Client2 {
 
         for (int group = 0; group < numThreadGroups; group++) {
             for (int i = 0; i < threadGroupSize; i++) {
-                String finalIPAddr = "http://localhost:8080/";
+                String finalIPAddr = reviewPostServerURL;
                 Thread thread = new Thread(() -> {
                     for (int j = 0; j < 100; j++) {
                         int retryCount = 0;
@@ -110,12 +110,12 @@ public class Client2 {
                                 albumbIds.add(albumID);
 
                                 HttpRequest likeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + albumID))
+                                        .uri(java.net.URI.create(finalIPAddr + "review/like/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
                                 HttpRequest disLikeRequest = HttpRequest.newBuilder()
-                                        .uri(java.net.URI.create(finalIPAddr + "reviews/like/" + albumID))
+                                        .uri(java.net.URI.create(finalIPAddr + "review/dislike/" + albumID))
                                         .header("Content-Type", "application/json")
                                         .POST(HttpRequest.BodyPublishers.ofString(""))
                                         .build();
@@ -160,7 +160,7 @@ public class Client2 {
             // Threads for GET requests
 
             for (int j = 0; j < 3; j++) {
-                String finalIPAddr1 = IPAddr;
+                String finalIPAddr1 = reviewGetServerURL;
                 Thread getThread = new Thread(() -> {
                     try {
                         String albumID = randomIDGenerator(albumbIds);

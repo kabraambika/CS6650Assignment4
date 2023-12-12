@@ -16,7 +16,7 @@ import java.io.IOException;
 @WebServlet(name = "ReviewsGetServlet", value = "/ReviewsGetServlet")
 public class ReviewsGetServlet extends HttpServlet {
     Gson gson = new Gson();
-    String EC2_URL = "ec2-54-245-159-188.us-west-2.compute.amazonaws.com";
+    String EC2_URL = "ec2-54-69-107-141.us-west-2.compute.amazonaws.com";
     private String mongoConnectionString = "mongodb://ec2-54-68-149-246.us-west-2.compute.amazonaws.com:27017";
     private String mongoDatabase = "AlbumStore";
     private String collectionName = "reviews";

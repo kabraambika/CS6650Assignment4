@@ -18,7 +18,7 @@ import redis.clients.jedis.JedisPoolConfig;
 public class JsonKafkaConsumer {
   private static final Logger LOGGER = LoggerFactory.getLogger(JsonKafkaConsumer.class);
   private AlbumService albumService;
-  private String EC2_PUBLIC_IP = "EC2_PUBLIC_IP";
+  private String EC2_PUBLIC_IP = "ec2-54-69-107-141.us-west-2.compute.amazonaws.com";
   JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), EC2_PUBLIC_IP, 6379);
 
   public JsonKafkaConsumer(AlbumService albumService) {
